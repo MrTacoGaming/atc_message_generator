@@ -4,123 +4,234 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATC Script Generator</title>
-    <!-- Tailwind CSS for modern styling -->
-    <script src="https://tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom formatting for blocks when copied as raw text */
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Fade-in for transcript blocks */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
         .transcript-line {
+            animation: fadeIn 0.15s ease-out both;
             white-space: pre-wrap;
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 0.375rem;
+        }
+
+        /* Gradient heading */
+        .gradient-text {
+            background: linear-gradient(90deg, #38bdf8, #67e8f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Phase tab active glow */
+        .phase-tab.active {
+            box-shadow: 0 0 0 1px #0284c7, 0 0 10px 0 rgba(14, 165, 233, 0.25);
+        }
+
+        /* Input focus glow */
+        .var-input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-6">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 lg:p-6">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div class="max-w-6xl mx-auto space-y-5">
+
         <!-- Header -->
-        <header class="border-b border-slate-700 pb-4">
-            <h1 class="text-3xl font-bold tracking-tight text-sky-400">ATC Script Generator</h1>
-            <p class="text-slate-400 text-sm mt-1">Select a flight phase. Enter details on the left to instantly build the split transcript on the right.</p>
+        <header class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-slate-800">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl select-none">✈</span>
+                    <h1 class="text-2xl lg:text-3xl font-bold tracking-tight gradient-text">ATC Script Generator</h1>
+                </div>
+                <p class="text-slate-500 text-sm mt-1 ml-10">Select a flight phase, fill in the variables, and get your radio transcript instantly.</p>
+            </div>
+            <div class="ml-10 sm:ml-0">
+                <span class="text-xs text-slate-600 font-mono tracking-widest uppercase">Roblox Flight Sim</span>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Left Column: Phase Selector & Variable Inputs (5 cols wide) -->
-            <div class="lg:col-span-5 space-y-4">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
-                    <!-- Dropdown Container -->
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Select Flight Phase:</label>
-                        <select id="presetSelect" class="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-sky-400 font-medium focus:outline-none focus:border-sky-500 w-full cursor-pointer">
-                            <option value="clearance">1. Clearance Delivery</option>
-                            <option value="push_taxi">2. Pushback & Taxi</option>
-                            <option value="takeoff">3. Takeoff / Departure</option>
-                            <option value="cruise">4. Climb / Cruise</option>
-                            <option value="approach">5. Descent / Approach</option>
-                            <option value="landing">6. Landing / Arrival</option>
-                        </select>
-                    </div>
-                </div>
+        <!-- Phase Tabs -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
+            <p class="text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-2.5 px-1">Flight Phase</p>
+            <div id="phaseTabs" class="flex flex-wrap gap-2">
+                <button class="phase-tab active" data-phase="clearance">
+                    <span class="phase-num">1</span>Clearance
+                </button>
+                <button class="phase-tab" data-phase="push_taxi">
+                    <span class="phase-num">2</span>Pushback &amp; Taxi
+                </button>
+                <button class="phase-tab" data-phase="takeoff">
+                    <span class="phase-num">3</span>Takeoff
+                </button>
+                <button class="phase-tab" data-phase="cruise">
+                    <span class="phase-num">4</span>Cruise
+                </button>
+                <button class="phase-tab" data-phase="approach">
+                    <span class="phase-num">5</span>Approach
+                </button>
+                <button class="phase-tab" data-phase="landing">
+                    <span class="phase-num">6</span>Landing
+                </button>
+            </div>
+        </div>
 
-                <!-- Variable Controls Panel -->
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg flex flex-col">
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Variable Inputs</h2>
-                        <button id="clearBtn" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/60 text-xs px-2.5 py-1 rounded font-medium transition-colors">Clear Info</button>
+        <style>
+            .phase-tab {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.4rem 0.85rem;
+                border-radius: 0.5rem;
+                font-size: 0.78rem;
+                font-weight: 600;
+                border: 1px solid #334155;
+                color: #94a3b8;
+                background: transparent;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+            .phase-tab:hover:not(.active) {
+                border-color: #0ea5e9;
+                color: #e2e8f0;
+                background: rgba(14,165,233,0.05);
+            }
+            .phase-tab.active {
+                background: #0284c7;
+                border-color: #0284c7;
+                color: #fff;
+            }
+            .phase-num {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 1.15rem;
+                height: 1.15rem;
+                border-radius: 9999px;
+                font-size: 0.65rem;
+                font-weight: 700;
+                background: rgba(255,255,255,0.15);
+                flex-shrink: 0;
+            }
+            .phase-tab:not(.active) .phase-num {
+                background: rgba(148,163,184,0.15);
+            }
+        </style>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+            <!-- Left Column: Variable Inputs -->
+            <div class="lg:col-span-5">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl shadow-xl h-full">
+                    <div class="flex justify-between items-center p-4 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Variable Inputs</h2>
+                        </div>
+                        <button id="clearBtn" class="flex items-center gap-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-900/60 hover:border-rose-700/60 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Clear
+                        </button>
                     </div>
-                    <div id="dynamicFields" class="space-y-3 max-h-[550px] overflow-y-auto pr-2">
+                    <div id="dynamicFields" class="p-4 space-y-3 max-h-[580px] overflow-y-auto">
                         <!-- Generated by JavaScript -->
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Radio Transcript Display (7 cols wide) -->
+            <!-- Right Column: Radio Transcript -->
             <div class="lg:col-span-7 flex flex-col">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg flex-1 flex flex-col">
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Radio Transcript Output</h2>
-                        <button id="copyBtn" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-4 py-2 rounded font-medium transition-colors">Copy Transcript</button>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl shadow-xl flex-1 flex flex-col">
+                    <div class="flex justify-between items-center p-4 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Radio Transcript</h2>
+                        </div>
+                        <button id="copyBtn" class="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all">
+                            <svg id="copyIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            <span id="copyLabel">Copy Transcript</span>
+                        </button>
                     </div>
-                    <!-- Stylized Output Container -->
-                    <div id="outputScript" class="w-full flex-1 bg-slate-950 border border-slate-700 rounded-lg p-5 font-mono select-all min-h-[500px] space-y-3 overflow-y-auto max-h-[670px]">
-                        <!-- Live Separated Blocks Generated by JavaScript -->
+                    <div id="outputScript" class="flex-1 p-4 font-mono space-y-2.5 overflow-y-auto max-h-[600px] min-h-[480px]">
+                        <!-- Live output -->
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
-    <!-- Application Logic -->
     <script>
         const dynamicFields = document.getElementById('dynamicFields');
-        const outputScript = document.getElementById('outputScript');
-        const copyBtn = document.getElementById('copyBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const presetSelect = document.getElementById('presetSelect');
+        const outputScript  = document.getElementById('outputScript');
+        const copyBtn       = document.getElementById('copyBtn');
+        const copyLabel     = document.getElementById('copyLabel');
+        const copyIcon      = document.getElementById('copyIcon');
+        const clearBtn      = document.getElementById('clearBtn');
+        const phaseTabs     = document.getElementById('phaseTabs');
+
+        let currentPhase = 'clearance';
 
         // Master Phrase Templates
         const ATCPresets = {
             clearance: "Pilot: {dep_airport} Ground, Lufthansa {flight_num}, {ac_type}, Instrument Flight Rules to {dest_airport}, Gate {gate_num}, Requesting Clearance.\n\nATC: Lufthansa {flight_num}, {dep_airport} Ground, Cleared to {dest_airport} via {sid}, Flight Level {initial_alt}, Squawk {squawk}.\n\nPilot: Cleared to {dest_airport} via {sid}, Flight Level {initial_alt}, Squawk {squawk}, Lufthansa {flight_num}.\n\nATC: Lufthansa {flight_num}, Readback correct, Contact Ground on {ground_freq} when ready for pushback.",
-            
+
             push_taxi: "Pilot: Ground, Lufthansa {flight_num}, Requesting Pushback and Start.\n\nATC: Lufthansa {flight_num}, Pushback and Start approved, Face {direction}.\n\nPilot: Pushback and Start approved, facing {direction}, Lufthansa {flight_num}.\n\n(After Pushback)\n\nPilot: Ground, Lufthansa {flight_num}, Ready to Taxi.\n\nATC: Lufthansa {flight_num}, Taxi to Runway {rwy} via {taxiway_route}, Hold short of Runway {rwy}, contact Tower on {tower_freq} when ready.\n\nPilot: Taxi to Runway {rwy} via {taxiway_route}, Hold short of Runway {rwy}, Lufthansa {flight_num}, contact Tower on {tower_freq} when ready.",
-            
+
             takeoff: "Pilot: {dep_airport} Tower, Lufthansa {flight_num}, Holding short of Runway {rwy}.\n\nATC: Lufthansa {flight_num}, Tower, Runway {rwy}, Cleared for Takeoff, Wind {wind_dir} at {wind_speed} Knots.\n\nPilot: Runway {rwy}, Cleared for Takeoff, Lufthansa {flight_num}.\n\nATC: Lufthansa {flight_num}, Contact Departure on {dep_freq}.\n\nPilot: Switching to Departure on {dep_freq}, Lufthansa {flight_num}.",
-            
+
             cruise: "Pilot: {region} Control, Lufthansa {flight_num}, Maintaining Flight Level {cruise_alt}.\n\nATC: Lufthansa {flight_num}, {region} Control, Radar contact.",
-            
+
             approach: "Pilot: {dest_airport} Approach, Lufthansa {flight_num}, Descending through Flight Level {current_alt}.\n\nATC: Lufthansa {flight_num}, Descend and maintain {maintain_alt_ft}, Cleared for the ILS Runway {dest_rwy} Approach.\n\nPilot: Descend and maintain {maintain_alt_ft}, Cleared for ILS Runway {dest_rwy}, Lufthansa {flight_num}.",
-            
+
             landing: "ATC: Lufthansa {flight_num}, contact Tower on {tower_freq}.\n\nPilot: Switching to Tower on {tower_freq}, Lufthansa {flight_num}.\n\nPilot: {dest_airport} Tower, Lufthansa {flight_num}, Established ILS Runway {dest_rwy}.\n\nATC: Lufthansa {flight_num}, Tower, Wind {wind_dir} at {wind_speed} Knots, Runway {dest_rwy}, Cleared to Land.\n\nPilot: Runway {dest_rwy}, Cleared to Land, Lufthansa {flight_num}.\n\nATC: Lufthansa {flight_num}, Exit Runway when able, Contact Ground on {ground_freq}.\n\nPilot: Switching to Ground on {ground_freq}, Lufthansa {flight_num}.\n\nPilot: {dest_airport} Ground, Lufthansa {flight_num}, Vacated Runway {dest_rwy}, Requesting Taxi to Gate.\n\nATC: Lufthansa {flight_num}, Taxi to Gate {gate_num} via {dest_taxi_route}.\n\nPilot: Taxi to Gate {gate_num} via {dest_taxi_route}, Lufthansa {flight_num}."
         };
 
         const VariableLabels = {
-            dep_airport: "Departure Airport",
-            dest_airport: "Destination Airport",
-            flight_num: "Flight Number",
-            ac_type: "Aircraft Type",
-            gate_num: "Gate Number",
-            sid: "Departure Route / SID",
-            initial_alt: "Initial Altitude / FL",
-            squawk: "Squawk Code",
-            ground_freq: "Ground Frequency",
-            direction: "Pushback Direction",
-            rwy: "Departure Runway",
-            taxiway_route: "Taxiway Route Out",
-            tower_freq: "Tower Frequency",
-            wind_dir: "Wind Direction",
-            wind_speed: "Wind Speed",
-            dep_freq: "Departure Frequency",
-            region: "Control Region",
-            cruise_alt: "Cruising Altitude",
-            current_alt: "Current Altitude",
+            dep_airport:     "Departure Airport",
+            dest_airport:    "Destination Airport",
+            flight_num:      "Flight Number",
+            ac_type:         "Aircraft Type",
+            gate_num:        "Gate Number",
+            sid:             "Departure Route / SID",
+            initial_alt:     "Initial Altitude / FL",
+            squawk:          "Squawk Code",
+            ground_freq:     "Ground Frequency",
+            direction:       "Pushback Direction",
+            rwy:             "Departure Runway",
+            taxiway_route:   "Taxiway Route Out",
+            tower_freq:      "Tower Frequency",
+            wind_dir:        "Wind Direction",
+            wind_speed:      "Wind Speed",
+            dep_freq:        "Departure Frequency",
+            region:          "Control Region",
+            cruise_alt:      "Cruising Altitude",
+            current_alt:     "Current Altitude",
             maintain_alt_ft: "Descend To Altitude",
-            dest_rwy: "Destination Runway",
+            dest_rwy:        "Destination Runway",
             dest_taxi_route: "Taxiway Route In"
         };
 
         function getActiveTemplate() {
-            return ATCPresets[presetSelect.value];
+            return ATCPresets[currentPhase];
         }
 
         function extractVariables(text) {
@@ -129,22 +240,24 @@
         }
 
         function updateFormFields() {
-            const template = getActiveTemplate();
+            const template  = getActiveTemplate();
             const variables = extractVariables(template);
-            const savedValues = JSON.parse(localStorage.getItem('atc_values') || '{}');
-            
+            const saved     = JSON.parse(localStorage.getItem('atc_values') || '{}');
+
             dynamicFields.innerHTML = '';
 
             variables.forEach(v => {
-                const value = savedValues[v] || '';
-                const displayLabel = VariableLabels[v] || v;
-                const fieldRow = document.createElement('div');
-                fieldRow.className = 'flex flex-col gap-1';
-                fieldRow.innerHTML = `
-                    <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">${displayLabel}</label>
-                    <input type="text" data-var="${v}" value="${value}" class="var-input bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-sky-500 font-mono w-full">
+                const value = saved[v] || '';
+                const label = VariableLabels[v] || v;
+                const row = document.createElement('div');
+                row.className = 'flex flex-col gap-1';
+                row.innerHTML = `
+                    <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">${label}</label>
+                    <input type="text" data-var="${v}" value="${value}"
+                        class="var-input bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-slate-200 font-mono w-full transition-all placeholder-slate-700"
+                        placeholder="${label}">
                 `;
-                dynamicFields.appendChild(fieldRow);
+                dynamicFields.appendChild(row);
             });
 
             attachInputListeners();
@@ -154,9 +267,9 @@
         function attachInputListeners() {
             document.querySelectorAll('.var-input').forEach(input => {
                 input.addEventListener('input', () => {
-                    const savedValues = JSON.parse(localStorage.getItem('atc_values') || '{}');
-                    savedValues[input.dataset.var] = input.value;
-                    localStorage.setItem('atc_values', JSON.stringify(savedValues));
+                    const saved = JSON.parse(localStorage.getItem('atc_values') || '{}');
+                    saved[input.dataset.var] = input.value;
+                    localStorage.setItem('atc_values', JSON.stringify(saved));
                     compileScript();
                 });
             });
@@ -164,76 +277,112 @@
 
         function compileScript() {
             const rawTemplate = getActiveTemplate();
-            const savedValues = JSON.parse(localStorage.getItem('atc_values') || '{}');
-            
-            // Clean container
+            const saved = JSON.parse(localStorage.getItem('atc_values') || '{}');
             outputScript.innerHTML = '';
 
-            // Split into separate communication transmissions based on double line breaks
             const blocks = rawTemplate.split('\n\n');
+            let hasAnyContent = false;
 
-            blocks.forEach(block => {
-                if(!block.trim()) return;
+            blocks.forEach((block, idx) => {
+                if (!block.trim()) return;
 
-                // Process bracket replacement variable tokens
                 let processedText = block;
-                const blockVars = extractVariables(block);
-                
-                blockVars.forEach(v => {
-                    const tag = `{${v}}`;
-                    const value = (savedValues[v] && savedValues[v].trim()) || `[${(VariableLabels[v] || v).toUpperCase()}]`;
+                extractVariables(block).forEach(v => {
+                    const tag   = `{${v}}`;
+                    const value = (saved[v] && saved[v].trim()) || `[${(VariableLabels[v] || v).toUpperCase()}]`;
                     processedText = processedText.split(tag).join(value);
                 });
 
-                // Create visually distinct components
+                hasAnyContent = true;
                 const blockDiv = document.createElement('div');
-                blockDiv.className = 'transcript-line border font-mono text-sm leading-relaxed ';
+                blockDiv.className = 'transcript-line rounded-lg text-sm leading-relaxed overflow-hidden';
+                blockDiv.style.animationDelay = `${idx * 0.04}s`;
 
                 if (processedText.startsWith('Pilot:')) {
-                    // Style format for Pilot
-                    blockDiv.classList.add('bg-slate-900', 'border-slate-700', 'text-slate-100', 'border-l-4', 'border-l-emerald-500');
+                    const content = processedText.slice('Pilot:'.length).trim();
+                    blockDiv.className += ' border border-emerald-900/50 bg-emerald-950/20';
+                    blockDiv.innerHTML = `
+                        <div class="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b border-emerald-900/30">
+                            <span class="text-[9px] font-bold tracking-widest text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-1.5 py-0.5 rounded">PILOT</span>
+                        </div>
+                        <div class="px-3 py-2 text-slate-200 border-l-2 border-emerald-600 ml-0">${escHtml(content)}</div>
+                    `;
                 } else if (processedText.startsWith('ATC:')) {
-                    // Style format for ATC Controllers
-                    blockDiv.classList.add('bg-slate-800/60', 'border-slate-700', 'text-amber-400', 'border-l-4', 'border-l-sky-500');
+                    const content = processedText.slice('ATC:'.length).trim();
+                    blockDiv.className += ' border border-sky-900/50 bg-sky-950/20';
+                    blockDiv.innerHTML = `
+                        <div class="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b border-sky-900/30">
+                            <span class="text-[9px] font-bold tracking-widest text-sky-400 bg-sky-950/60 border border-sky-800/50 px-1.5 py-0.5 rounded">ATC</span>
+                        </div>
+                        <div class="px-3 py-2 text-amber-300 border-l-2 border-sky-500 ml-0">${escHtml(content)}</div>
+                    `;
                 } else {
-                    // Stage notes or procedural instructions (e.g., After Pushback)
-                    blockDiv.classList.add('bg-transparent', 'border-transparent', 'text-slate-500', 'italic', 'text-xs', 'p-1', 'my-1');
+                    // Stage note
+                    blockDiv.className = 'transcript-line text-xs text-slate-600 italic px-1 py-0.5';
+                    blockDiv.style.animationDelay = `${idx * 0.04}s`;
+                    blockDiv.textContent = processedText;
                 }
 
-                blockDiv.textContent = processedText;
                 outputScript.appendChild(blockDiv);
             });
+
+            if (!hasAnyContent) {
+                renderEmptyState();
+            }
         }
 
-        // Handle full storage wipeout
+        function escHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function renderEmptyState() {
+            outputScript.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full min-h-[380px] text-center gap-3 select-none">
+                    <span class="text-4xl opacity-20">📡</span>
+                    <p class="text-slate-600 text-sm">Fill in the fields on the left<br>to generate your radio transcript.</p>
+                </div>
+            `;
+        }
+
+        // Phase tab clicks
+        phaseTabs.addEventListener('click', e => {
+            const btn = e.target.closest('.phase-tab');
+            if (!btn) return;
+            currentPhase = btn.dataset.phase;
+            document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            updateFormFields();
+        });
+
+        // Clear button
         clearBtn.addEventListener('click', () => {
-            if(confirm("Are you sure you want to clear all input fields?")) {
+            if (confirm('Clear all input fields?')) {
                 localStorage.removeItem('atc_values');
                 updateFormFields();
             }
         });
 
-        presetSelect.addEventListener('change', updateFormFields);
-
-        // Copy raw text function reading visible elements sequentially
+        // Copy transcript
         copyBtn.addEventListener('click', () => {
             const lines = [];
             document.querySelectorAll('.transcript-line').forEach(el => {
-                lines.push(el.textContent);
+                lines.push(el.textContent.trim());
             });
-            
             navigator.clipboard.writeText(lines.join('\n\n'));
-            
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = 'Copied Transcript!';
+
+            copyLabel.textContent = 'Copied!';
+            copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>';
             copyBtn.classList.replace('bg-sky-600', 'bg-emerald-600');
+            copyBtn.classList.replace('hover:bg-sky-500', 'hover:bg-emerald-500');
+
             setTimeout(() => {
-                copyBtn.textContent = originalText;
+                copyLabel.textContent = 'Copy Transcript';
+                copyIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>';
                 copyBtn.classList.replace('bg-emerald-600', 'bg-sky-600');
-            }, 1500);
+                copyBtn.classList.replace('hover:bg-emerald-500', 'hover:bg-sky-500');
+            }, 1800);
         });
 
-        // Application start setup
         window.addEventListener('DOMContentLoaded', () => {
             updateFormFields();
         });
