@@ -9,8 +9,107 @@
         const _t = localStorage.getItem('atc_theme') || 'dark';
         document.documentElement.setAttribute('data-theme', _t);
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* ── Reset ────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        /* ── Utilities (replaces cdn.tailwindcss.com) ── */
+
+        /* Display */
+        .flex        { display: flex; }
+        .inline-flex { display: inline-flex; }
+        .grid        { display: grid; }
+
+        /* Flex */
+        .flex-col      { flex-direction: column; }
+        .flex-wrap     { flex-wrap: wrap; }
+        .flex-1        { flex: 1 1 0%; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .items-center  { align-items: center; }
+        .items-end     { align-items: flex-end; }
+        .justify-between { justify-content: space-between; }
+        .justify-center  { justify-content: center; }
+
+        /* Grid */
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+
+        /* Gap */
+        .gap-0\.5 { gap: 0.125rem; }
+        .gap-1    { gap: 0.25rem; }
+        .gap-2    { gap: 0.5rem; }
+        .gap-3    { gap: 0.75rem; }
+        .gap-4    { gap: 1rem; }
+
+        /* Padding */
+        .p-3     { padding: 0.75rem; }
+        .p-4     { padding: 1rem; }
+        .px-0\.5 { padding-left: 0.125rem; padding-right: 0.125rem; }
+        .px-3    { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-3\.5 { padding-left: 0.875rem; padding-right: 0.875rem; }
+        .py-2    { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .pt-2    { padding-top: 0.5rem; }
+        .pb-4    { padding-bottom: 1rem; }
+        .pb-1\.5 { padding-bottom: 0.375rem; }
+
+        /* Margin */
+        .mt-1  { margin-top: 0.25rem; }
+        .mb-2  { margin-bottom: 0.5rem; }
+        .mb-3  { margin-bottom: 0.75rem; }
+        .ml-10 { margin-left: 2.5rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+
+        /* Space-y */
+        .space-y-2\.5 > * + * { margin-top: 0.625rem; }
+        .space-y-3    > * + * { margin-top: 0.75rem; }
+        .space-y-4    > * + * { margin-top: 1rem; }
+
+        /* Sizing */
+        .w-full  { width: 100%; }
+        .w-3     { width: 0.75rem; }
+        .w-3\.5  { width: 0.875rem; }
+        .h-full  { height: 100%; }
+        .h-1     { height: 0.25rem; }
+        .h-3     { height: 0.75rem; }
+        .h-3\.5  { height: 0.875rem; }
+        .max-w-6xl  { max-width: 72rem; }
+        .min-h-screen { min-height: 100vh; }
+
+        /* Typography */
+        .text-xs  { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm  { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .font-sans { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        .font-mono { font-family: ui-monospace, 'Cascadia Code', monospace; }
+        .font-bold { font-weight: 700; }
+        .tracking-tight   { letter-spacing: -0.025em; }
+        .tracking-widest  { letter-spacing: 0.1em; }
+        .uppercase   { text-transform: uppercase; }
+        .text-center { text-align: center; }
+        .select-none { user-select: none; }
+
+        /* Overflow / Rounding / Misc */
+        .overflow-hidden { overflow: hidden; }
+        .overflow-y-auto { overflow-y: auto; }
+        .rounded-full    { border-radius: 9999px; }
+        .transition-all  { transition: all 0.15s ease; }
+        .duration-300    { transition-duration: 0.3s; }
+
+        /* Responsive — sm: (640px) */
+        @media (min-width: 640px) {
+            .sm\:flex-row     { flex-direction: row; }
+            .sm\:items-center { align-items: center; }
+            .sm\:ml-0         { margin-left: 0; }
+        }
+
+        /* Responsive — lg: (1024px) */
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+            .lg\:col-span-5   { grid-column: span 5 / span 5; }
+            .lg\:col-span-7   { grid-column: span 7 / span 7; }
+            .lg\:text-3xl     { font-size: 1.875rem; line-height: 2.25rem; }
+            .lg\:p-6          { padding: 1.5rem; }
+        }
+
         /* ── Theme variables ──────────────────────── */
         :root {
             --bg-base:   #020617;
@@ -171,7 +270,7 @@
     <div class="t-card p-3">
         <p class="t-label mb-2 px-0.5">Flight Phase</p>
         <div class="w-full h-1 rounded-full mb-3 overflow-hidden" style="background:var(--border)">
-            <div id="phaseProgress" class="h-full rounded-full bg-sky-500 transition-all duration-300" style="width:16.67%"></div>
+            <div id="phaseProgress" class="h-full rounded-full transition-all duration-300" style="width:16.67%;background:#0ea5e9"></div>
         </div>
         <div id="phaseTabs" class="flex flex-wrap gap-2">
             <button class="phase-tab active" data-phase="clearance" data-idx="0"><span class="phase-num">1</span>Clearance</button>
@@ -227,7 +326,7 @@
                         </button>
                     </div>
                 </div>
-                <div id="dynamicFields" class="p-4 space-y-3 overflow-y-auto max-h-[520px]"></div>
+                <div id="dynamicFields" class="p-4 space-y-3 overflow-y-auto" style="max-height:520px"></div>
             </div>
         </div>
 
@@ -254,7 +353,7 @@
                         </button>
                     </div>
                 </div>
-                <div id="outputScript" class="flex-1 p-4 font-mono space-y-2.5 overflow-y-auto min-h-[520px] max-h-[700px] text-sm"></div>
+                <div id="outputScript" class="flex-1 p-4 font-mono space-y-2\.5 overflow-y-auto text-sm" style="min-height:520px;max-height:700px"></div>
             </div>
             <p class="text-right" style="color:var(--text-3);font-size:0.65rem;padding-top:2px">
                 <kbd style="background:var(--bg-card);border:1px solid var(--border-s);border-radius:3px;padding:1px 5px">Ctrl</kbd>
