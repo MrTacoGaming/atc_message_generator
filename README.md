@@ -1,62 +1,48 @@
-# Automated ATC Script Generator
+# ATC Script Generator
 
-A responsive, client-side web tool built to automatically compile flight simulator radio transcripts. It parses structured user templates, identifies variable placeholders, dynamically builds input forms, and separates transmissions into highly distinct **Pilot** and **ATC** dialogue layouts.
+A self-contained, client-side web tool for generating realistic ATC radio transcripts for Roblox flight simulators. Select a flight phase, fill in the variables, and get a formatted Pilot/ATC dialogue ready to copy or download — no server, no build step, no internet required.
 
-## Live Demo
-The application is deployed and hosted live on GitHub Pages.
-* **Live Link:** `https://mrtacogaming.github.io/atc_message_generator/`
+**Live:** `https://mrtacogaming.github.io/atc_message_generator/`
 
 ---
 
 ## Features
 
-* **Dynamic Form Generator:** Automatically scans templates for bracketed variables `{like_this}` and generates individual clean text fields instantly.
-* **Visual Conversation Stripping:** Splits text blocks automatically. Pilot messages feature an **emerald indicator** line, while Controller (ATC) responses use an **amber aviation text** block with a sky-blue accent.
-* **Phase-of-Flight Presets:** Pre-configured with exact multi-line dialogue patterns mapped directly from flight coordination documentation:
-  1. Clearance Delivery
-  2. Pushback & Taxi
-  3. Takeoff / Departure
-  4. Climb / Cruise
-  5. Descent / Approach
-  6. Landing / Arrival
-* **Persistent Browser Cache:** Utilizes the HTML5 `localStorage` API to securely save variables inside your browser so your active data isn't lost if you refresh or switch phases.
-* **One-Click Utilities:** Quick-action layout modifications including a total data reset button and automated clipboard multi-line exports.
+- **6 Flight Phases** — Clearance, Pushback & Taxi, Takeoff, Cruise, Approach, Landing
+- **Dynamic Form Generator** — scans templates for `{variable}` tokens and builds input fields automatically
+- **Editable Airline Name** — replaces the callsign across all phase templates
+- **Color-coded Transcript** — Pilot blocks (emerald) and ATC blocks (amber/sky) are visually distinct
+- **Example Data** — one-click fill with a realistic EDDF → EGLL sample flight
+- **Save Slots (A / B / C)** — save and reload full sessions from browser storage
+- **Persistent Storage** — field values survive page refreshes via `localStorage`
+- **Copy & Download** — copy transcript to clipboard (`Ctrl+Enter`) or download as `.txt`
+- **Dark / Light Mode** — theme toggle persisted across sessions
+- **Phase Progress Bar** — visual indicator of position in the 6-phase flow
+- **Input Hints** — format guidance on key fields (squawk, frequencies, FL notation)
+- **Zero Dependencies** — no CDN, no framework, no network required
 
 ---
 
-## 💻 Local Configuration & Setup
+## Running Locally
 
-Since the system runs entirely on client-side native browser technologies, you do not need to install any external build frameworks, runtimes, or database servers.
+```bash
+git clone https://github.com/MrTacoGaming/atc_message_generator.git
+cd atc_message_generator
+open index.html        # macOS
+start index.html       # Windows
+xdg-open index.html    # Linux
+```
 
-### Prerequisites
-* A standard modern web browser (Google Chrome, Mozilla Firefox, Microsoft Edge, or Apple Safari).
-* A text editor (such as VS Code, Notepad++, or Sublime Text).
-
-### Execution Steps
-1. Clone the project locally onto your workstation machine:
-   ```bash
-   git clone https://github.com<YOUR-GITHUB-USERNAME>/<YOUR-REPO-NAME>.git
-   ```
-2. Enter the source folder:
-   ```bash
-   cd <YOUR-REPO-NAME>
-   ```
-3. Open the main file using your favorite operating system launcher shortcut:
-   * **Windows:** Double-click `index.html` or type `start index.html` in your command line terminal.
-   * **Mac:** Type `open index.html` in your terminal shell.
-   * **Linux:** Type `xdg-open index.html` in your bash session window.
+No install step needed. Open the file in any modern browser.
 
 ---
 
-## 🤝 Production Publishing Roadmap
+## Deploying
 
-To publish adjustments directly to your live environment, push modifications into your tracking main branch:
+Push to `main` — GitHub Pages deploys automatically within ~60 seconds.
 
 ```bash
 git add .
-git commit -m "Optimize responsive padding across standard display sizes"
+git commit -m "your message"
 git push origin main
 ```
-
-*Note: Allow approximately 30 to 90 seconds after pushing for GitHub Actions to completely build and cascade the adjustments live to your active Pages instance.*
-
