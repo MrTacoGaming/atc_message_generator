@@ -4,7 +4,7 @@ A responsive, client-side web tool built to automatically compile flight simulat
 
 ## Live Demo
 The application is deployed and hosted live on GitHub Pages.
-* **Live Link:** `https://<YOUR-GITHUB-USERNAME>.github.io/<YOUR-REPO-NAME>/`
+* **Live Link:** `https://mrtacogaming.github.io/atc_message_generator/`
 
 ---
 
