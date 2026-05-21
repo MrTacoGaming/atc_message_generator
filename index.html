@@ -169,6 +169,19 @@
         }
         .t-input:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.12); }
         .t-input::placeholder { color: var(--text-3); }
+        .t-input.warn { border-color: #f59e0b; }
+        .t-input.warn:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+        .t-warn { font-size: 0.65rem; color: #f59e0b; margin-top: 0.15rem; }
+
+        /* ── Random / dice button ─────────────────── */
+        .random-btn {
+            flex-shrink: 0; padding: 0 0.6rem;
+            background: var(--bg-input); border: 1px solid var(--border-s);
+            color: var(--text-2); border-radius: 0.5rem; cursor: pointer;
+            font-size: 0.95rem; line-height: 1; transition: all 0.15s;
+        }
+        .random-btn:hover { border-color: #0ea5e9; color: var(--text-1); background: rgba(14,165,233,0.08); }
+        .random-btn:active { transform: scale(0.92); }
 
         /* ── Labels / hints ───────────────────────── */
         .t-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-2); display: block; }
@@ -262,6 +275,7 @@
         </div>
         <div class="flex items-center gap-2 ml-10 sm:ml-0 flex-shrink-0">
             <span class="text-xs font-mono tracking-widest uppercase" style="color:var(--text-3)">Roblox Flight Sim</span>
+            <button id="staticBtn" class="theme-btn" title="Toggle radio static"></button>
             <button id="themeBtn" class="theme-btn" title="Toggle theme"></button>
         </div>
     </header>
@@ -270,15 +284,17 @@
     <div class="t-card p-3">
         <p class="t-label mb-2 px-0.5">Flight Phase</p>
         <div class="w-full h-1 rounded-full mb-3 overflow-hidden" style="background:var(--border)">
-            <div id="phaseProgress" class="h-full rounded-full transition-all duration-300" style="width:16.67%;background:#0ea5e9"></div>
+            <div id="phaseProgress" class="h-full rounded-full transition-all duration-300" style="width:25%;background:#0ea5e9"></div>
         </div>
         <div id="phaseTabs" class="flex flex-wrap gap-2">
-            <button class="phase-tab active" data-phase="clearance" data-idx="0"><span class="phase-num">1</span>Clearance</button>
-            <button class="phase-tab" data-phase="push_taxi"  data-idx="1"><span class="phase-num">2</span>Pushback &amp; Taxi</button>
-            <button class="phase-tab" data-phase="takeoff"    data-idx="2"><span class="phase-num">3</span>Takeoff</button>
-            <button class="phase-tab" data-phase="cruise"     data-idx="3"><span class="phase-num">4</span>Cruise</button>
-            <button class="phase-tab" data-phase="approach"   data-idx="4"><span class="phase-num">5</span>Approach</button>
-            <button class="phase-tab" data-phase="landing"    data-idx="5"><span class="phase-num">6</span>Landing</button>
+            <button class="phase-tab" data-phase="atis"      data-idx="0"><span class="phase-num">1</span>ATIS</button>
+            <button class="phase-tab active" data-phase="clearance" data-idx="1"><span class="phase-num">2</span>Clearance</button>
+            <button class="phase-tab" data-phase="push_taxi" data-idx="2"><span class="phase-num">3</span>Pushback &amp; Taxi</button>
+            <button class="phase-tab" data-phase="takeoff"   data-idx="3"><span class="phase-num">4</span>Takeoff</button>
+            <button class="phase-tab" data-phase="departure" data-idx="4"><span class="phase-num">5</span>Departure</button>
+            <button class="phase-tab" data-phase="cruise"    data-idx="5"><span class="phase-num">6</span>Cruise</button>
+            <button class="phase-tab" data-phase="approach"  data-idx="6"><span class="phase-num">7</span>Approach</button>
+            <button class="phase-tab" data-phase="landing"   data-idx="7"><span class="phase-num">8</span>Landing</button>
         </div>
     </div>
 
@@ -299,10 +315,15 @@
 
             <!-- Save Slots -->
             <div class="t-card p-4">
-                <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center justify-between mb-2">
                     <p class="t-label">Saved Sessions</p>
-                    <span class="t-hint">Click route to load · Save to overwrite</span>
+                    <div class="flex gap-1">
+                        <button id="exportSessionBtn" class="slot-mini-btn" title="Export all sessions as JSON" style="color:#38bdf8;border-color:rgba(14,165,233,0.3);background:rgba(14,165,233,0.08)">Export</button>
+                        <button id="importSessionBtn" class="slot-mini-btn" title="Import sessions from JSON" style="color:#38bdf8;border-color:rgba(14,165,233,0.3);background:rgba(14,165,233,0.08)">Import</button>
+                        <input id="importSessionInput" type="file" accept="application/json,.json" style="display:none">
+                    </div>
                 </div>
+                <p class="t-hint mb-2" style="margin-top:0">Click row to load · Save to overwrite · ✎ to rename</p>
                 <div id="slotsContainer" class="flex flex-col gap-2"></div>
             </div>
 
@@ -367,25 +388,33 @@
 
 <script>
     // ── DOM refs ──────────────────────────────────────────────────────
-    const dynamicFields  = document.getElementById('dynamicFields');
-    const outputScript   = document.getElementById('outputScript');
-    const copyBtn        = document.getElementById('copyBtn');
-    const copyLabel      = document.getElementById('copyLabel');
-    const copyIcon       = document.getElementById('copyIcon');
-    const clearBtn       = document.getElementById('clearBtn');
-    const exampleBtn     = document.getElementById('exampleBtn');
-    const downloadBtn    = document.getElementById('downloadBtn');
-    const phaseTabs      = document.getElementById('phaseTabs');
-    const themeBtn       = document.getElementById('themeBtn');
-    const airlineInput   = document.getElementById('airlineInput');
-    const slotsContainer = document.getElementById('slotsContainer');
-    const phaseProgress  = document.getElementById('phaseProgress');
+    const dynamicFields      = document.getElementById('dynamicFields');
+    const outputScript       = document.getElementById('outputScript');
+    const copyBtn            = document.getElementById('copyBtn');
+    const copyLabel          = document.getElementById('copyLabel');
+    const copyIcon           = document.getElementById('copyIcon');
+    const clearBtn           = document.getElementById('clearBtn');
+    const exampleBtn         = document.getElementById('exampleBtn');
+    const downloadBtn        = document.getElementById('downloadBtn');
+    const phaseTabs          = document.getElementById('phaseTabs');
+    const themeBtn           = document.getElementById('themeBtn');
+    const airlineInput       = document.getElementById('airlineInput');
+    const slotsContainer     = document.getElementById('slotsContainer');
+    const phaseProgress      = document.getElementById('phaseProgress');
+    const exportSessionBtn   = document.getElementById('exportSessionBtn');
+    const importSessionBtn   = document.getElementById('importSessionBtn');
+    const importSessionInput = document.getElementById('importSessionInput');
+    const staticBtn          = document.getElementById('staticBtn');
 
     let currentPhase = 'clearance';
 
     // ── Templates ─────────────────────────────────────────────────────
     // {airline} is handled separately (persistent, not a per-phase field)
     const ATCPresets = {
+        atis:
+            "Pilot: {dep_airport} Information, request current ATIS.\n\n" +
+            "ATC: This is {dep_airport} Information {atis_letter}, time {atis_time} Zulu, wind {wind_dir} at {wind_speed} knots, visibility {visibility}, ceiling {ceiling}, temperature {temp}, dewpoint {dewpoint}, altimeter {altimeter}, Runway {rwy} in use, advise on initial contact you have Information {atis_letter}.",
+
         clearance:
             "Pilot: {dep_airport} Ground, {airline} {flight_num}, {ac_type}, Instrument Flight Rules to {dest_airport}, Gate {gate_num}, Requesting Clearance.\n\n" +
             "ATC: {airline} {flight_num}, {dep_airport} Ground, Cleared to {dest_airport} via {sid}, Flight Level {initial_alt}, Squawk {squawk}.\n\n" +
@@ -407,6 +436,13 @@
             "Pilot: Runway {rwy}, Cleared for Takeoff, {airline} {flight_num}.\n\n" +
             "ATC: {airline} {flight_num}, Contact Departure on {dep_freq}.\n\n" +
             "Pilot: Switching to Departure on {dep_freq}, {airline} {flight_num}.",
+
+        departure:
+            "Pilot: {region} Departure, {airline} {flight_num}, climbing through Flight Level {current_alt}.\n\n" +
+            "ATC: {airline} {flight_num}, {region} Departure, Radar contact, Climb and maintain Flight Level {cruise_alt}.\n\n" +
+            "Pilot: Climb and maintain Flight Level {cruise_alt}, {airline} {flight_num}.\n\n" +
+            "ATC: {airline} {flight_num}, Contact {region} Center on {center_freq}.\n\n" +
+            "Pilot: Switching to {region} Center on {center_freq}, {airline} {flight_num}.",
 
         cruise:
             "Pilot: {region} Control, {airline} {flight_num}, Maintaining Flight Level {cruise_alt}.\n\n" +
@@ -452,7 +488,15 @@
         current_alt:     "Current Altitude / FL",
         maintain_alt_ft: "Descend To Altitude",
         dest_rwy:        "Destination Runway",
-        dest_taxi_route: "Taxiway Route In"
+        dest_taxi_route: "Taxiway Route In",
+        atis_letter:     "ATIS Letter",
+        atis_time:       "ATIS Time (UTC)",
+        visibility:      "Visibility",
+        ceiling:         "Ceiling",
+        temp:            "Temperature (°C)",
+        dewpoint:        "Dewpoint (°C)",
+        altimeter:       "Altimeter / QNH",
+        center_freq:     "Center Frequency"
     };
 
     // Soft format hints shown below each field
@@ -473,7 +517,15 @@
         flight_num:      "e.g. 456",
         ac_type:         "e.g. Boeing 737-800",
         taxiway_route:   "e.g. A3, B, B7",
-        dest_taxi_route: "e.g. N, N3, P"
+        dest_taxi_route: "e.g. N, N3, P",
+        atis_letter:     "single letter, e.g. C",
+        atis_time:       "HHMM, e.g. 1430",
+        visibility:      "e.g. 10km",
+        ceiling:         "e.g. 4000 broken",
+        temp:            "°C, e.g. 15",
+        dewpoint:        "°C, e.g. 10",
+        altimeter:       "hPa or inHg, e.g. 1013",
+        center_freq:     "e.g. 127.275 MHz"
     };
 
     // Realistic example data
@@ -499,7 +551,85 @@
         current_alt:     "120",
         maintain_alt_ft: "3000",
         dest_rwy:        "09L",
-        dest_taxi_route: "N, N3, P"
+        dest_taxi_route: "N, N3, P",
+        atis_letter:     "C",
+        atis_time:       "1430",
+        visibility:      "10km",
+        ceiling:         "4000 broken",
+        temp:            "15",
+        dewpoint:        "10",
+        altimeter:       "1013",
+        center_freq:     "127.275"
+    };
+
+    // ── Random generators ──────────────────────────────────────────────
+    function randomVHF() {
+        const steps = Math.floor((136975 - 118000) / 25) + 1;
+        const khz = 118000 + Math.floor(Math.random() * steps) * 25;
+        return (khz / 1000).toFixed(3);
+    }
+    function randomRunway() {
+        const num = String(Math.floor(Math.random() * 36) + 1).padStart(2, '0');
+        const suffix = ['', '', '', 'L', 'C', 'R'][Math.floor(Math.random() * 6)];
+        return num + suffix;
+    }
+    function randomSquawk() {
+        const reserved = new Set(['7500', '7600', '7700', '0000', '7777']);
+        let s;
+        do { s = Array.from({length: 4}, () => Math.floor(Math.random() * 8)).join(''); }
+        while (reserved.has(s));
+        return s;
+    }
+    const Randomizers = {
+        squawk:      randomSquawk,
+        ground_freq: randomVHF,
+        tower_freq:  randomVHF,
+        dep_freq:    randomVHF,
+        center_freq: randomVHF,
+        rwy:         randomRunway,
+        dest_rwy:    randomRunway
+    };
+
+    // ── Validators ─────────────────────────────────────────────────────
+    function isValidVHF(v) {
+        const n = parseFloat(v);
+        return /^\d{3}\.\d{1,3}$/.test(v.trim()) && n >= 118 && n <= 136.975;
+    }
+    function isValidRwy(v) {
+        const m = v.trim().match(/^(\d{1,2})([LCR])?$/i);
+        if (!m) return false;
+        const n = +m[1];
+        return n >= 1 && n <= 36;
+    }
+    const Validators = {
+        squawk:          v => /^[0-7]{4}$/.test(v) && !['7500','7600','7700'].includes(v),
+        ground_freq:     isValidVHF,
+        tower_freq:      isValidVHF,
+        dep_freq:        isValidVHF,
+        center_freq:     isValidVHF,
+        rwy:             isValidRwy,
+        dest_rwy:        isValidRwy,
+        maintain_alt_ft: v => /^\d+$/.test(v.trim()),
+        wind_dir:        v => /^\d+$/.test(v.trim()) && +v >= 0 && +v <= 360,
+        wind_speed:      v => /^\d+$/.test(v.trim()) && +v >= 0,
+        initial_alt:     v => /^\d+$/.test(v.trim()),
+        cruise_alt:      v => /^\d+$/.test(v.trim()),
+        current_alt:     v => /^\d+$/.test(v.trim())
+    };
+    const ValidatorHints = {
+        squawk:          "Squawk should be 4 octal digits (0–7), excluding 7500/7600/7700",
+        ground_freq:     "VHF aviation frequencies: 118.000–136.975 MHz",
+        tower_freq:      "VHF aviation frequencies: 118.000–136.975 MHz",
+        dep_freq:        "VHF aviation frequencies: 118.000–136.975 MHz",
+        center_freq:     "VHF aviation frequencies: 118.000–136.975 MHz",
+        rwy:             "Runway should be 01–36 with optional L/C/R",
+        dest_rwy:        "Runway should be 01–36 with optional L/C/R",
+        maintain_alt_ft: "Altitude should be a whole number in feet",
+        wind_dir:        "Wind direction should be 0–360 degrees",
+        wind_speed:      "Wind speed should be a whole number in knots",
+        initial_alt:     "Flight Level should be a number (e.g. 050)",
+        cruise_alt:      "Flight Level should be a number (e.g. 350)",
+        current_alt:     "Flight Level should be a number (e.g. 120)"
     };
 
     // ── Theme ──────────────────────────────────────────────────────────
@@ -554,13 +684,28 @@
         renderSlots();
     }
 
+    function getSlotLabels() {
+        return JSON.parse(localStorage.getItem('atc_slot_labels') || '{}');
+    }
+    function setSlotLabel(name, label) {
+        const labels = getSlotLabels();
+        const trimmed = (label || '').trim();
+        if (trimmed) labels[name] = trimmed;
+        else delete labels[name];
+        localStorage.setItem('atc_slot_labels', JSON.stringify(labels));
+    }
+
+    function autoSlotSummary(slot) {
+        return `${slot.values.dep_airport || '?'} → ${slot.values.dest_airport || '?'} · ${slot.airline || 'Lufthansa'} ${slot.values.flight_num || ''}`.trim();
+    }
+
     function renderSlots() {
         slotsContainer.innerHTML = '';
+        const labels = getSlotLabels();
         ['A', 'B', 'C'].forEach(name => {
-            const slot    = getSlot(name);
-            const summary = slot
-                ? `${slot.values.dep_airport || '?'} → ${slot.values.dest_airport || '?'} · ${slot.airline || 'Lufthansa'} ${slot.values.flight_num || ''}`.trim()
-                : 'Empty';
+            const slot     = getSlot(name);
+            const custom   = labels[name];
+            const summary  = custom || (slot ? autoSlotSummary(slot) : 'Empty');
 
             const card = document.createElement('div');
             card.className = 'slot-card' + (slot ? ' filled' : '');
@@ -572,14 +717,38 @@
             card.innerHTML = `
                 <div class="slot-load">
                     <span style="font-size:0.6rem;font-weight:800;background:${badgeBg};color:${badgeColor};padding:1px 7px;border-radius:3px;flex-shrink:0">${name}</span>
-                    <span style="color:${textColor};font-size:0.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(summary)}</span>
+                    <span class="slot-name" style="color:${textColor};font-size:0.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(summary)}</span>
                 </div>
                 <div style="display:flex;gap:4px;flex-shrink:0">
+                    <button class="slot-mini-btn rename-slot" title="Rename" style="color:var(--text-2);border-color:var(--border-s);background:var(--bg-input)">✎</button>
                     <button class="slot-mini-btn save-slot" style="color:#38bdf8;border-color:rgba(14,165,233,0.3);background:rgba(14,165,233,0.08)">Save</button>
                     ${slot ? `<button class="slot-mini-btn clear-slot" style="color:#fb7185;border-color:rgba(251,113,133,0.3);background:rgba(251,113,133,0.08)">✕</button>` : ''}
                 </div>`;
 
+            const nameEl = card.querySelector('.slot-name');
+            const beginRename = () => {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = custom || '';
+                input.placeholder = slot ? autoSlotSummary(slot) : 'Name this slot';
+                input.className = 't-input';
+                input.style.cssText = 'font-size:0.7rem;padding:2px 6px;height:auto;min-width:0;flex:1';
+                const finish = (commit) => {
+                    if (commit) setSlotLabel(name, input.value);
+                    renderSlots();
+                };
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+                    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+                });
+                input.addEventListener('blur', () => finish(true));
+                nameEl.replaceWith(input);
+                input.focus();
+                input.select();
+            };
+
             card.querySelector('.slot-load').addEventListener('click', () => { if (slot) loadSlot(name); });
+            card.querySelector('.rename-slot').addEventListener('click', e => { e.stopPropagation(); beginRename(); });
             card.querySelector('.save-slot').addEventListener('click', e => { e.stopPropagation(); saveSlot(name); });
             if (slot) card.querySelector('.clear-slot').addEventListener('click', e => { e.stopPropagation(); clearSlot(name); });
 
@@ -599,21 +768,43 @@
         dynamicFields.innerHTML = '';
 
         variables.forEach(v => {
-            const label = VariableLabels[v] || v;
-            const hint  = FieldHints[v]  || '';
-            const value = saved[v] || '';
+            const label   = VariableLabels[v] || v;
+            const hint    = FieldHints[v]  || '';
+            const value   = saved[v] || '';
+            const hasRand = !!Randomizers[v];
+            const hasVal  = !!Validators[v];
+            const warnTxt = ValidatorHints[v] || '';
+
+            const inputEl = `<input type="text" data-var="${v}" value="${escHtml(value)}"
+                    class="t-input var-input" placeholder="${escHtml(hint || label)}">`;
+            const inputBlock = hasRand
+                ? `<div class="flex gap-1">${inputEl}<button type="button" class="random-btn" data-var="${v}" title="Randomize">🎲</button></div>`
+                : inputEl;
+
             const row = document.createElement('div');
             row.className = 'flex flex-col gap-0.5';
             row.innerHTML = `
                 <label class="t-label">${escHtml(label)}</label>
-                <input type="text" data-var="${v}" value="${escHtml(value)}"
-                    class="t-input var-input" placeholder="${escHtml(hint || label)}">
-                ${hint ? `<p class="t-hint">${escHtml(hint)}</p>` : ''}`;
+                ${inputBlock}
+                ${hint ? `<p class="t-hint">${escHtml(hint)}</p>` : ''}
+                ${hasVal ? `<p class="t-warn" data-warn="${v}" style="display:none">${escHtml(warnTxt)}</p>` : ''}`;
             dynamicFields.appendChild(row);
         });
 
         attachInputListeners();
+        dynamicFields.querySelectorAll('.var-input').forEach(applyValidation);
         compileScript();
+    }
+
+    function applyValidation(input) {
+        const v = input.dataset.var;
+        const validator = Validators[v];
+        if (!validator) return;
+        const val = input.value.trim();
+        const invalid = val !== '' && !validator(val);
+        input.classList.toggle('warn', invalid);
+        const warn = dynamicFields.querySelector(`[data-warn="${v}"]`);
+        if (warn) warn.style.display = invalid ? '' : 'none';
     }
 
     function attachInputListeners() {
@@ -622,7 +813,17 @@
                 const saved = JSON.parse(localStorage.getItem('atc_values') || '{}');
                 saved[input.dataset.var] = input.value;
                 localStorage.setItem('atc_values', JSON.stringify(saved));
+                applyValidation(input);
                 compileScript();
+            });
+        });
+        dynamicFields.querySelectorAll('.random-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const v = btn.dataset.var;
+                const input = dynamicFields.querySelector(`.var-input[data-var="${v}"]`);
+                if (!input || !Randomizers[v]) return;
+                input.value = Randomizers[v]();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
             });
         });
     }
@@ -693,11 +894,13 @@
     phaseTabs.addEventListener('click', e => {
         const btn = e.target.closest('.phase-tab');
         if (!btn) return;
+        if (btn.dataset.phase === currentPhase) return;
         currentPhase = btn.dataset.phase;
         document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
-        phaseProgress.style.width = `${((parseInt(btn.dataset.idx) + 1) / 6) * 100}%`;
+        phaseProgress.style.width = `${((parseInt(btn.dataset.idx) + 1) / 8) * 100}%`;
         updateFormFields();
+        playStatic();
     });
 
     // ── Button handlers ────────────────────────────────────────────────
@@ -743,6 +946,112 @@
         URL.revokeObjectURL(a.href);
     });
 
+    // ── Export / Import session ───────────────────────────────────────
+    function collectSession() {
+        const slots = {};
+        ['A', 'B', 'C'].forEach(n => { const s = getSlot(n); if (s) slots[n] = s; });
+        return {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            airline: localStorage.getItem('atc_airline') || '',
+            values:  JSON.parse(localStorage.getItem('atc_values') || '{}'),
+            slots,
+            slotLabels: getSlotLabels(),
+            theme: localStorage.getItem('atc_theme') || 'dark'
+        };
+    }
+
+    exportSessionBtn.addEventListener('click', () => {
+        const session = collectSession();
+        const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.download = `atc_session_${stamp}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+
+    importSessionBtn.addEventListener('click', () => importSessionInput.click());
+    importSessionInput.addEventListener('change', e => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (!data || typeof data !== 'object') throw new Error('Not an object');
+                if (!confirm('Import will overwrite your current session. Continue?')) return;
+                if (typeof data.airline === 'string') localStorage.setItem('atc_airline', data.airline);
+                if (data.values && typeof data.values === 'object') localStorage.setItem('atc_values', JSON.stringify(data.values));
+                if (data.slots && typeof data.slots === 'object') {
+                    ['A', 'B', 'C'].forEach(n => {
+                        if (data.slots[n]) localStorage.setItem('atc_slot_' + n, JSON.stringify(data.slots[n]));
+                        else localStorage.removeItem('atc_slot_' + n);
+                    });
+                }
+                if (data.slotLabels && typeof data.slotLabels === 'object') {
+                    localStorage.setItem('atc_slot_labels', JSON.stringify(data.slotLabels));
+                }
+                if (data.theme === 'dark' || data.theme === 'light') applyTheme(data.theme);
+                airlineInput.value = localStorage.getItem('atc_airline') || '';
+                renderSlots();
+                updateFormFields();
+            } catch (err) {
+                alert('Could not import session: ' + err.message);
+            } finally {
+                importSessionInput.value = '';
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    // ── Radio static (Web Audio synthesis) ─────────────────────────────
+    let staticOn = localStorage.getItem('atc_static') === '1';
+    let audioCtx = null;
+    function ensureAudioCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+    function playStatic(duration = 0.22) {
+        if (!staticOn) return;
+        try {
+            const ctx = ensureAudioCtx();
+            const len = Math.floor(ctx.sampleRate * duration);
+            const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+            const data = buf.getChannelData(0);
+            const attack = Math.floor(len * 0.08);
+            const release = Math.floor(len * 0.5);
+            for (let i = 0; i < len; i++) {
+                let env = 1;
+                if (i < attack) env = i / attack;
+                else if (i > len - release) env = (len - i) / release;
+                data[i] = (Math.random() * 2 - 1) * 0.12 * env;
+            }
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1800;
+            filter.Q.value = 0.7;
+            src.connect(filter).connect(ctx.destination);
+            src.start();
+        } catch (_) { /* audio unavailable */ }
+    }
+    const STATIC_ON  = `<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.414a2 2 0 010-2.828l8.486-8.486a2 2 0 012.828 2.828l-8.486 8.486a2 2 0 01-2.828 0z M3 12h2 M9 18l2 2 M19 12h2 M15 6l2-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>`;
+    const STATIC_OFF = `<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity:.5"><circle cx="12" cy="12" r="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16"/></svg>`;
+    function applyStaticBtn() {
+        staticBtn.innerHTML = staticOn ? STATIC_ON : STATIC_OFF;
+        staticBtn.title = staticOn ? 'Radio static: on (click to mute)' : 'Radio static: off (click to enable)';
+        staticBtn.style.color = staticOn ? '#38bdf8' : '';
+    }
+    staticBtn.addEventListener('click', () => {
+        staticOn = !staticOn;
+        localStorage.setItem('atc_static', staticOn ? '1' : '0');
+        applyStaticBtn();
+        if (staticOn) playStatic(0.15);
+    });
+
     // ── Keyboard shortcut ──────────────────────────────────────────────
     document.addEventListener('keydown', e => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -754,6 +1063,7 @@
     // ── Init ───────────────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
         applyTheme(localStorage.getItem('atc_theme') || 'dark');
+        applyStaticBtn();
         airlineInput.value = localStorage.getItem('atc_airline') || '';
         renderSlots();
         updateFormFields();
